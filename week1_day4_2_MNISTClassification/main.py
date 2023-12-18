@@ -48,16 +48,13 @@ def get_data():
                         transform=my_transform,
                         train=True,
                         download=args.download)
-  eval_dataset = MNIST(root=download_root,
-                       transform=my_transform,
-                       train=False,
-                       download=args.download)
   test_dataset = MNIST(root=download_root,
                        transform=my_transform,
                        train=False,
                        download=args.download)
 
-  return train_dataset, eval_dataset, test_dataset
+  # return train_dataset, test_dataset
+  return train_dataset, test_dataset
 
 def main():
   print(torch.__version__)
@@ -73,7 +70,7 @@ def main():
     device = torch.device("cpu")
 
   # Get MNIST Dataset
-  train_dataset, eval_dataset, test_dataset = get_data()
+  train_dataset, test_dataset = get_data()
 
   # Make DataLoader
   train_loader = DataLoader(train_dataset,
@@ -82,12 +79,6 @@ def main():
                             num_workers=0,
                             pin_memory=False,
                             drop_last=True)
-  eval_loader = DataLoader(eval_dataset,
-                           batch_size=1,
-                           shuffle=False,
-                           num_workers=0,
-                           pin_memory=False,
-                           drop_last=False)
   test_loader = DataLoader(test_dataset,
                            batch_size=1,
                            shuffle=False,
@@ -110,7 +101,6 @@ def main():
     criterion = get_criterion(crit="mnist", device=device)
 
     epoch = 2
-    iter = 0 # TODO ??? iter가 굳이 필요한가? 아래 i로 대체 되는데?
     for e in range(epoch):
       total_loss = 0
       for i, batch in enumerate(train_loader):
@@ -132,10 +122,8 @@ def main():
 
         total_loss += loss_val.item() # Total(1) loss for batches'(7500) loss
 
-        if iter % 100 == 0:
+        if i % 100 == 0:
           print(f"{e} epoch {i} iter loss: {loss_val.item()}")
-
-        iter += 1
 
       scheduler.step()
 
@@ -144,31 +132,6 @@ def main():
 
       torch.save(model.state_dict(), args.output_dir+"/model_epoch"+str(e)+".pt")
     print("End training")
-  elif args.mode == "eval":
-    model = _model(batch=1, n_classes=10, in_channel=1, in_width=32, in_height=32)
-    checkpoint = torch.load(args.checkpoint)
-    model.load_state_dict(checkpoint)
-    model.to(device)
-    model.eval()
-
-    acc = 0
-    num_eval = 0
-
-    for i, batch in enumerate(eval_loader):
-      img = batch[0]
-      img = img.to(device)
-      ground_truth = batch[1]
-
-      # inference
-      out = model(img)
-      out = out.cpu()
-      # print(out)
-
-      if out == ground_truth:
-        acc += 1
-      num_eval += 1
-
-    print(f"Evaluation score: {acc} / {num_eval}")
   elif args.mode == "test":
     model = _model(batch=1, n_classes=10, in_channel=1, in_width=32, in_height=32)
     checkpoint = torch.load(args.checkpoint)
@@ -189,7 +152,16 @@ def main():
       out = out.cpu()
       # print(out)
 
-      show_img(img.cpu().numpy(), str(out.item()))
+      if out == ground_truth:
+        acc += 1
+      num_eval += 1
+
+      # show_img(img.cpu().numpy(), str(out.item()))
+
+      if i % 1000 == 0:
+        print(f"i: {i}")
+
+    print(f"Evaluation score: {acc} / {num_eval}")
 
 # /opt/conda/bin/python main.py --mode train --download True --output_dir "./output"
 # /opt/conda/bin/python main.py --mode eval --download True --output_dir ./output --checkpoint ./output/model_epoch1.pt
@@ -197,6 +169,3 @@ def main():
 if __name__ == "__main__":
   args = parse_args()
   main()
-
-  # TODO ??? Why? eval이랑 test 지금 같은 거 아닌가?
-  # print(get_data()[1] == get_data()[2])

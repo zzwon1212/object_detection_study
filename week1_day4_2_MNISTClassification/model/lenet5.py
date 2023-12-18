@@ -35,7 +35,7 @@ class LeNet5(nn.Module):
     x = self.fc3(x)
     x = torch.tanh(x)
     x = self.fc4(x)
-    # x = x.view(self.batch, -1) # TODO Why???
+    # x = x.view(self.batch, -1) # TODO ??? Why?
     x = nn.functional.softmax(x, dim=1)
 
     if not self.is_train:
