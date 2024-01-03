@@ -20,19 +20,38 @@ class LeNet5(nn.Module):
     self.fc3 = nn.Linear(120, 84)
     self.fc4 = nn.Linear(84, self.n_classes)
 
+    # batch norm
+    self.bn0 = nn.BatchNorm2d(6)
+    self.bn1 = nn.BatchNorm2d(16)
+    self.bn2 = nn.BatchNorm2d(120)
+
+    # weight initialization
+    torch.nn.init.xavier_uniform_(self.conv0.weight)
+    torch.nn.init.xavier_uniform_(self.conv1.weight)
+    torch.nn.init.xavier_uniform_(self.conv2.weight)
+    torch.nn.init.xavier_uniform_(self.fc3.weight)
+    torch.nn.init.xavier_uniform_(self.fc4.weight)
+
+    # dropout
+    self.dropout = nn.Dropout(p=0.1)
+
   def forward(self, x):
     # x_shape: [B, C, H, W]
     x = self.conv0(x)
+    x = self.bn0(x)
     x = torch.tanh(x)
     x = nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
     x = self.conv1(x)
+    x = self.bn1(x)
     x = torch.tanh(x)
     x = nn.functional.avg_pool2d(x, kernel_size=2, stride=2)
     x = self.conv2(x)
+    x = self.bn2(x)
     x = torch.tanh(x)
     # change format 4D -> 2D [B, C*H*W]
     x = torch.flatten(x, start_dim=1)
     x = self.fc3(x)
+    x = self.dropout(x)
     x = torch.tanh(x)
     x = self.fc4(x)
     # x = x.view(self.batch, -1) # TODO ??? Why?

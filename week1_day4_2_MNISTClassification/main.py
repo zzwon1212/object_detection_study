@@ -6,7 +6,7 @@ import os
 
 import torch
 import torch.nn as nn
-from torchvision.datasets import MNIST
+from torchvision.datasets import MNIST, FashionMNIST
 import torchvision.transforms as transforms
 from torch.utils.data.dataloader import DataLoader
 from torch import optim
@@ -35,25 +35,34 @@ def parse_args():
 
   return args
 
-def get_data():
-  download_root = "./mnist_dataset"
-
+def get_data(name="MNIST"):
   my_transform = transforms.Compose([
     transforms.Resize([32, 32]),
     transforms.ToTensor(),
     transforms.Normalize((0.5, ), (1.0, ))
   ])
 
-  train_dataset = MNIST(root=download_root,
-                        transform=my_transform,
-                        train=True,
-                        download=args.download)
-  test_dataset = MNIST(root=download_root,
-                       transform=my_transform,
-                       train=False,
-                       download=args.download)
+  if name == "MNIST":
+    download_root = "./mnist_dataset"
+    train_dataset = MNIST(root=download_root,
+                          transform=my_transform,
+                          train=True,
+                          download=args.download)
+    test_dataset = MNIST(root=download_root,
+                         transform=my_transform,
+                         train=False,
+                         download=args.download)
+  elif name == "FashionMNIST":
+    download_root = "./Fashionmnist_dataset"
+    train_dataset = FashionMNIST(root=download_root,
+                                 transform=my_transform,
+                                 train=True,
+                                 download=args.download)
+    test_dataset = FashionMNIST(root=download_root,
+                                transform=my_transform,
+                                train=False,
+                                download=args.download)
 
-  # return train_dataset, test_dataset
   return train_dataset, test_dataset
 
 def main():
@@ -70,7 +79,7 @@ def main():
     device = torch.device("cpu")
 
   # Get MNIST Dataset
-  train_dataset, test_dataset = get_data()
+  train_dataset, test_dataset = get_data(name="FashionMNIST")
 
   # Make DataLoader
   train_loader = DataLoader(train_dataset,
@@ -94,7 +103,7 @@ def main():
     model.to(device)
     model.train()
 
-    optimizer = optim.SGD(params=model.parameters(), lr=0.01, momentum=0.9)
+    optimizer = optim.SGD(params=model.parameters(), lr=0.01, momentum=0.9, weight_decay=0.01)
     scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=5, gamma=0.1)
 
     # loss
@@ -164,7 +173,6 @@ def main():
     print(f"Evaluation score: {acc} / {num_eval}")
 
 # /opt/conda/bin/python main.py --mode train --download True --output_dir "./output"
-# /opt/conda/bin/python main.py --mode eval --download True --output_dir ./output --checkpoint ./output/model_epoch1.pt
 # /opt/conda/bin/python main.py --mode test --download True --output_dir ./output --checkpoint ./output/model_epoch1.pt
 if __name__ == "__main__":
   args = parse_args()
