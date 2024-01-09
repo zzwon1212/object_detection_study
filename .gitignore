@@ -2,3 +2,4 @@ mnist_dataset
 Fashionmnist_dataset
 __pycache__
 *.pt
+YOLO_v1/data
